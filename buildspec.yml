@@ -1,0 +1,21 @@
+
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - pip install --upgrade pip
+      - pip install sagemaker scikit-learn pandas joblib
+
+  build:
+    commands:
+      - echo "Deploying model to SageMaker..."
+      - python deploy.py
+
+artifacts:
+  files:
+    - inference.py
+    - fraud_model.pkl
+    - deploy.py
