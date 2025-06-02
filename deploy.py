@@ -4,7 +4,7 @@ import boto3
 
 # Use explicit S3 bucket to avoid needing s3:CreateBucket permissions
 bucket = 'creditcarddata1204'  # ✅ Replace with your actual bucket if different
-model_key = 'fraud-detection/fraud_model.pkl'
+model_key = 'fraud-detection/fraud_model.tar.gz'
 model_path = f's3://{bucket}/{model_key}'
 
 # Set up SageMaker session and role
