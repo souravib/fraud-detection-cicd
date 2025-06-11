@@ -12,7 +12,7 @@ sagemaker_session = sagemaker.Session()
 role = sagemaker.get_execution_role()
 
 # Upload model to S3
-sagemaker_session.upload_data(path='fraud_model.pkl', bucket=bucket, key_prefix='fraud-detection')
+sagemaker_session.upload_data(path='fraud_model.tar.gz', bucket=bucket, key_prefix='fraud-detection')
 
 # Create SageMaker model
 model = SKLearnModel(
