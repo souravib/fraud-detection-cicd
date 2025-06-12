@@ -7,9 +7,10 @@ import os
 sagemaker_session = sagemaker.Session()
 role = sagemaker.get_execution_role()
 
-# Create a tar.gz model archive
+# Create a tar.gz model archive that includes both the model and inference script
 with tarfile.open('fraud_model.tar.gz', mode='w:gz') as tar:
     tar.add('fraud_model.pkl', arcname='fraud_model.pkl')
+    tar.add('inference.py', arcname='inference.py')  # ✅ This line is essential
 
 # Upload the tar.gz to S3
 bucket = 'creditcarddata1204'
