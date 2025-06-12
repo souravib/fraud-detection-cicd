@@ -7,15 +7,19 @@ phases:
       python: 3.9
     commands:
       - pip install --upgrade pip
-      - pip install sagemaker scikit-learn pandas joblib
+      - pip install sagemaker scikit-learn pandas joblib boto3
 
   build:
     commands:
-      - echo "Deploying model to SageMaker..."
+      - echo "✅ Packaging model and inference script..."
+      - tar -czf fraud_model.tar.gz fraud_model.pkl inference.py
+      - echo "✅ Uploading to S3..."
+      - aws s3 cp fraud_model.tar.gz s3://creditcarddata1204/fraud-detection/fraud_model.tar.gz
+      - echo "🚀 Deploying model to SageMaker..."
       - python deploy.py
 
 artifacts:
   files:
+    - fraud_model.tar.gz
     - inference.py
-    - fraud_model.pkl
     - deploy.py
