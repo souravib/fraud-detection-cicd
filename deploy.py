@@ -1,12 +1,24 @@
-from sagemaker.sklearn.model import SKLearnModel
+import tarfile
 import sagemaker
+from sagemaker.sklearn.model import SKLearnModel
 import os
 
+# Set up SageMaker session and role
 sagemaker_session = sagemaker.Session()
 role = sagemaker.get_execution_role()
 
+# Create a tar.gz model archive
+with tarfile.open('fraud_model.tar.gz', mode='w:gz') as tar:
+    tar.add('fraud_model.pkl', arcname='fraud_model.pkl')
+
+# Upload the tar.gz to S3
+bucket = 'creditcarddata1204'
+prefix = 'fraud-detection'
+model_path = sagemaker_session.upload_data(path='fraud_model.tar.gz', bucket=bucket, key_prefix=prefix)
+
+# Define and deploy the model
 model = SKLearnModel(
-    model_data='s3://creditcarddata1204/fraud-detection/fraud_model.tar.gz',  # Update if path changes
+    model_data=model_path,
     role=role,
     entry_point='inference.py',
     framework_version='0.23-1',
