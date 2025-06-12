@@ -7,15 +7,13 @@ import os
 sagemaker_session = sagemaker.Session()
 role = sagemaker.get_execution_role()
 
-# Create a tar.gz model archive that includes both the model and inference script
+# Create a tar.gz archive with both model and inference script
 with tarfile.open('fraud_model.tar.gz', mode='w:gz') as tar:
     tar.add('fraud_model.pkl', arcname='fraud_model.pkl')
-    tar.add('inference.py', arcname='inference.py')  # ✅ This line is essential
+    tar.add('inference.py', arcname='inference.py')  # Include your inference script
 
-# Upload the tar.gz to S3
-bucket = 'creditcarddata1204'
-prefix = 'fraud-detection'
-model_path = sagemaker_session.upload_data(path='fraud_model.tar.gz', bucket=bucket, key_prefix=prefix)
+# Upload to SageMaker's default bucket
+model_path = sagemaker_session.upload_data(path='fraud_model.tar.gz', key_prefix='fraud-detection')
 
 # Define and deploy the model
 model = SKLearnModel(
