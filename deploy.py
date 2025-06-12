@@ -21,7 +21,6 @@ model_path = sagemaker_session.upload_data(path='fraud_model.tar.gz', bucket=buc
 model = SKLearnModel(
     model_data=model_path,
     role=role,
-    entry_point='inference.py',
     framework_version='0.23-1',
     sagemaker_session=sagemaker_session
 )
