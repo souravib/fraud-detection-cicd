@@ -21,5 +21,4 @@ phases:
 artifacts:
   files:
     - fraud_model.tar.gz
-    - inference.py
     - deploy.py
