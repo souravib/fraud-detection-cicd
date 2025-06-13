@@ -1,33 +1,34 @@
-import sagemaker
-from sagemaker.sklearn.model import SKLearnModel
-import os
+import boto3
 
-# Set up SageMaker session and role
-sagemaker_session = sagemaker.Session()
-role = sagemaker.get_execution_role()
+sagemaker = boto3.client("sagemaker")
 
-# ✅ Use existing tar.gz from buildspec
-model_tarball = 'fraud_model.tar.gz'
-assert os.path.exists(model_tarball), "❌ Tarball not found!"
+model_name = "fraud-model-v1"
+endpoint_name = "fraud-detection-endpoint"
+role = "arn:aws:iam::377632750099:role/datazone_usr_role_5ih12zk69oqyvq_ce0yt0fsdqn7o6"
 
-# ✅ Upload to S3
-bucket = 'sagemaker-eu-west-1-377632750099'
-prefix = 'fraud-detection'
-model_path = sagemaker_session.upload_data(path=model_tarball, bucket=bucket, key_prefix=prefix)
-
-print("📦 Uploaded model to:", model_path)
-
-# ✅ Define and deploy model
-model = SKLearnModel(
-    model_data=model_path,
-    role=role,
-    framework_version='0.23-1',
-    sagemaker_session=sagemaker_session
+# Create model
+sagemaker.create_model(
+    ModelName=model_name,
+    PrimaryContainer={
+        "Image": "985815980388.dkr.ecr.eu-west-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3",
+        "ModelDataUrl": "s3://model-output-1306/fraud-detection-job-2025-06-13-05-25-15-297/output/model.tar.gz"
+    },
+    ExecutionRoleArn=role
 )
 
-predictor = model.deploy(
-    instance_type='ml.m5.large',
-    initial_instance_count=1
+# Create endpoint config
+sagemaker.create_endpoint_config(
+    EndpointConfigName=endpoint_name + "-config",
+    ProductionVariants=[{
+        "InstanceType": "ml.m5.large",
+        "InitialInstanceCount": 1,
+        "ModelName": model_name,
+        "VariantName": "AllTraffic"
+    }]
 )
 
-print("✅ Deployed model to endpoint:", predictor.endpoint_name)
+# Create endpoint
+sagemaker.create_endpoint(
+    EndpointName=endpoint_name,
+    EndpointConfigName=endpoint_name + "-config"
+)
