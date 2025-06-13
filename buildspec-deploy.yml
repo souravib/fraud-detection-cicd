@@ -1,0 +1,10 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - pip install boto3 sagemaker
+  build:
+    commands:
+      - echo "Deploying model to SageMaker"
+      - python deploy.py
