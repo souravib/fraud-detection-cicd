@@ -26,3 +26,8 @@ predictor = model.deploy(
     initial_instance_count=1,
     endpoint_name='fraud-detection-endpoint'
 )
+
+import sys
+print("✅ Model deployed successfully.")
+sys.exit(0)
+
