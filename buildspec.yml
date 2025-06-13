@@ -19,3 +19,30 @@ phases:
 artifacts:
   files:
     - model.tar.gz
+
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      - pip install -r requirements.txt
+
+  build:
+    commands:
+      - echo "🚀 Starting training"
+      - python train.py --bucket creditcarddata1204 --key 2025/05/08/06/fraud_data_stream-1-2025-05-08-06-35-36-1ebabec7-baa6-4caa-b2ae-74dab9afd8f7
+      - echo "📁 Listing contents"
+      - ls -lh
+      - echo "📦 Packaging model"
+      - tar -czf model.tar.gz model.joblib
+
+  post_build:
+    commands:
+      - echo "☁️ Uploading model to S3"
+      - aws s3 cp model.tar.gz s3://creditcarddata1204/model-output-1306/model.tar.gz
+
+artifacts:
+  files:
+    - model.tar.gz
