@@ -1,34 +1,28 @@
-import boto3
+import sagemaker
+from sagemaker.sklearn.model import SKLearnModel
 
-sagemaker = boto3.client("sagemaker")
+# Create a SageMaker session
+sagemaker_session = sagemaker.Session()
 
-model_name = "fraud-model-v1"
-endpoint_name = "fraud-detection-endpoint"
+# Define IAM role (same one used in training)
 role = "arn:aws:iam::377632750099:role/datazone_usr_role_5ih12zk69oqyvq_ce0yt0fsdqn7o6"
 
-# Create model
-sagemaker.create_model(
-    ModelName=model_name,
-    PrimaryContainer={
-        "Image": "985815980388.dkr.ecr.eu-west-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3",
-        "ModelDataUrl": "s3://model-output-1306/fraud-detection-job-2025-06-13-05-25-15-297/output/model.tar.gz"
-    },
-    ExecutionRoleArn=role
+# Define model location in S3
+model_data = 's3://creditcarddata1204/model-output-1306/model.tar.gz'
+
+# Create SKLearnModel object
+model = SKLearnModel(
+    model_data=model_data,
+    role=role,
+    entry_point='train.py',  # Needed only if your model has custom inference logic
+    framework_version='0.23-1',
+    py_version='py3',
+    sagemaker_session=sagemaker_session
 )
 
-# Create endpoint config
-sagemaker.create_endpoint_config(
-    EndpointConfigName=endpoint_name + "-config",
-    ProductionVariants=[{
-        "InstanceType": "ml.m5.large",
-        "InitialInstanceCount": 1,
-        "ModelName": model_name,
-        "VariantName": "AllTraffic"
-    }]
-)
-
-# Create endpoint
-sagemaker.create_endpoint(
-    EndpointName=endpoint_name,
-    EndpointConfigName=endpoint_name + "-config"
+# Deploy to SageMaker endpoint
+predictor = model.deploy(
+    instance_type='ml.m5.large',
+    initial_instance_count=1,
+    endpoint_name='fraud-detection-endpoint'
 )
