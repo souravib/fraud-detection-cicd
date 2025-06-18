@@ -1,14 +1,16 @@
+# deploy.py
+
 import boto3
 from sagemaker.sklearn.model import SKLearnModel
 from sagemaker import Session, get_execution_role
 import botocore.exceptions
 
-# Configuration
+# Config
 model_name = "fraud-model-v1"
 endpoint_name = "fraud-detection-endpoint"
 model_data_path = "s3://creditcarddata1204/model-output-1306/model.tar.gz"
 
-# Create SageMaker session and client
+# Create session and client
 session = Session()
 sagemaker_client = session.sagemaker_client
 role = get_execution_role()
@@ -38,10 +40,10 @@ def delete_existing_resources(endpoint_name):
         else:
             raise
 
-# Cleanup old resources
+# Delete previous versions if any
 delete_existing_resources(endpoint_name)
 
-# Define and deploy model
+# Define model
 model = SKLearnModel(
     model_data=model_data_path,
     role=role,
@@ -50,6 +52,7 @@ model = SKLearnModel(
     sagemaker_session=session
 )
 
+# Deploy model
 try:
     print("🚀 Deploying model to SageMaker endpoint...")
     predictor = model.deploy(
