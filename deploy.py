@@ -44,9 +44,11 @@ def delete_existing_resources(endpoint_name):
 delete_existing_resources(endpoint_name)
 
 # Define model
+
 model = SKLearnModel(
     model_data=model_data_path,
     role=role,
+    entry_point="inference.py",  # 👈 add this!
     framework_version="0.23-1",
     py_version="py3",
     sagemaker_session=session
