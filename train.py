@@ -50,11 +50,11 @@ def main():
     ])
     pipeline.fit(X_train, y_train)
 
-    # Save model
+    # Save the model as model.pkl inside a "model" folder
     os.makedirs("model", exist_ok=True)
-    joblib.dump(pipeline, "model/model.joblib")
+    joblib.dump(pipeline, "model/model.pkl")
 
-    # Optional: log performance
+    # Log performance metrics
     y_pred = pipeline.predict(X_test)
     print(classification_report(y_test, y_pred))
 
