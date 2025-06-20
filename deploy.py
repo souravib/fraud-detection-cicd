@@ -49,7 +49,7 @@ model = SKLearnModel(
     model_data=model_data_path,
     role=role,
     entry_point="inference.py",  # 👈 add this!
-    framework_version="0.23-1",
+    framework_version="1.2-1",
     py_version="py3",
     sagemaker_session=session
 )
