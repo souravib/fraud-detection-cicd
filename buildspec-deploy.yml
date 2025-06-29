@@ -3,12 +3,12 @@ version: 0.2
 phases:
   install:
     commands:
-      - echo "Installing deployment dependencies"
+      - echo "📦 Installing deployment dependencies"
       - pip install --upgrade pip
       - pip install boto3 sagemaker
 
   build:
     commands:
-      - echo "Deploying model to SageMaker"
+      - echo "🚀 Deploying model to SageMaker"
       - python deploy.py
       - echo "✅ Deployment complete"
