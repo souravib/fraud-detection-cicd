@@ -56,7 +56,7 @@ model = SKLearnModel(
 try:
     print("🚀 Deploying model to SageMaker endpoint...")
     predictor = model.deploy(
-        instance_type='ml.m5.large',
+        instance_type='ml.t2.medium',
         initial_instance_count=1,
         endpoint_name=endpoint_name,
         update_endpoint=False
