@@ -11,14 +11,14 @@ phases:
   build:
     commands:
       - echo "🚀 Running training script"
-      - python train.py --bucket creditcarddata1204 --key data/train_data.csv
+      - python scripts/train.py --bucket creditcarddata1204 --key data/train_data.csv
 
   post_build:
     commands:
       - echo "📦 Packaging model.pkl and inference.py into model.tar.gz"
       - mkdir -p model_artifact
       - cp model/model.pkl model_artifact/
-      - cp scripts/inference.py model_artifact/   # adjust path if needed
+      - cp scripts/inference.py model_artifact/
       - tar -czvf model.tar.gz -C model_artifact .
 
       - echo "📤 Uploading model.tar.gz to S3"
