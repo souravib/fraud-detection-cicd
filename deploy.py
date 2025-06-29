@@ -1,21 +1,20 @@
-# deploy.py
-
 import boto3
 from sagemaker.sklearn.model import SKLearnModel
 from sagemaker import Session, get_execution_role
 import botocore.exceptions
 
-# Config
+# --- Config
 model_name = "fraud-model-v1"
 endpoint_name = "fraud-detection-endpoint"
 model_data_path = "s3://creditcarddata1204/model-output-1306/model.tar.gz"
 
-# Create session and client
+# --- Create session and client
 session = Session()
 sagemaker_client = session.sagemaker_client
 role = get_execution_role()
 
 def delete_existing_resources(endpoint_name):
+    # Delete endpoint if it exists
     try:
         sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
         print(f"⚠️ Deleting existing endpoint: {endpoint_name}")
@@ -29,6 +28,7 @@ def delete_existing_resources(endpoint_name):
         else:
             raise
 
+    # Delete endpoint config if it exists
     try:
         sagemaker_client.describe_endpoint_config(EndpointConfigName=endpoint_name)
         print(f"⚠️ Deleting endpoint config: {endpoint_name}")
@@ -40,21 +40,19 @@ def delete_existing_resources(endpoint_name):
         else:
             raise
 
-# Delete previous versions if any
+# --- Step 1: Clean up previous deployment (if any)
 delete_existing_resources(endpoint_name)
 
-# Define model
-
+# --- Step 2: Define and deploy new model
 model = SKLearnModel(
     model_data=model_data_path,
     role=role,
-    entry_point="inference.py",  # 👈 add this!
-    framework_version="1.2-1",
+    entry_point="inference.py",  # must define input/output handling
+    framework_version="1.2-1",   # compatible with your joblib/pickle
     py_version="py3",
     sagemaker_session=session
 )
 
-# Deploy model
 try:
     print("🚀 Deploying model to SageMaker endpoint...")
     predictor = model.deploy(
