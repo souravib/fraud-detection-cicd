@@ -3,10 +3,10 @@ version: 0.2
 phases:
   install:
     commands:
-      - echo "📦 Installing dependencies"
+      - echo "📦 Installing training dependencies"
       - pip install --upgrade pip
       - pip install -r requirements.txt
-      - pip install xgboost
+      - pip install xgboost pandas scikit-learn joblib boto3
 
   build:
     commands:
@@ -15,18 +15,19 @@ phases:
 
   post_build:
     commands:
-      - echo "📦 Packaging model.pkl into model.tar.gz"
+      - echo "📦 Packaging model.pkl and inference.py into model.tar.gz"
       - mkdir -p model_artifact
       - cp model/model.pkl model_artifact/
+      - cp scripts/inference.py model_artifact/   # adjust path if needed
       - tar -czvf model.tar.gz -C model_artifact .
 
       - echo "📤 Uploading model.tar.gz to S3"
       - aws s3 cp model.tar.gz s3://creditcarddata1204/model-output-1306/model.tar.gz
 
-      - echo "📤 Uploading metrics to S3"
+      - echo "📤 Uploading metrics.json to S3"
       - aws s3 cp metrics/metrics.json s3://creditcarddata1204/model-output-1306/metrics.json
 
-      - echo "✅ Upload complete"
+      - echo "✅ Model and metrics uploaded successfully"
 
 artifacts:
   files:
