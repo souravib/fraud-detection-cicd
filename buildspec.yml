@@ -3,22 +3,30 @@ version: 0.2
 phases:
   install:
     commands:
-      - echo "Installing dependencies"
+      - echo "📦 Installing dependencies"
       - pip install --upgrade pip
       - pip install -r requirements.txt
+      - pip install xgboost
 
   build:
     commands:
-      - echo "Running training script"
-      - python train.py --bucket creditcarddata1204 --key 2025/05/08/06/fraud_data_stream-1-2025-05-08-06-35-36-1ebabec7-baa6-4caa-b2ae-74dab9afd8f7
+      - echo "🚀 Running training script"
+      - python train.py --bucket creditcarddata1204 --key data/train_data.csv
 
   post_build:
     commands:
-      - echo "Packaging model"
-      - tar -czvf model.tar.gz -C model .
-      - echo "Uploading model to S3"
+      - echo "📦 Packaging model.pkl into model.tar.gz"
+      - mkdir -p model_artifact
+      - cp model/model.pkl model_artifact/
+      - tar -czvf model.tar.gz -C model_artifact .
+
+      - echo "📤 Uploading model.tar.gz to S3"
       - aws s3 cp model.tar.gz s3://creditcarddata1204/model-output-1306/model.tar.gz
-      - echo "✅ Model uploaded successfully"
+
+      - echo "📤 Uploading metrics to S3"
+      - aws s3 cp metrics/metrics.json s3://creditcarddata1204/model-output-1306/metrics.json
+
+      - echo "✅ Upload complete"
 
 artifacts:
   files:
