@@ -2,5 +2,4 @@ xgboost
 scikit-learn
 pandas
 joblib
-boto3
 sagemaker
