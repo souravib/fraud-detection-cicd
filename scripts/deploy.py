@@ -1,5 +1,4 @@
 import boto3
-import time
 from sagemaker.sklearn.model import SKLearnModel
 from sagemaker import Session, get_execution_role
 import botocore.exceptions
@@ -43,7 +42,7 @@ def delete_existing_resources(endpoint_name):
 # --- Step 1: Clean up previous deployment ---
 delete_existing_resources(endpoint_name)
 
-# --- Step 2: Define and deploy new model ---
+# --- Step 2: Trigger deploy without waiting ---
 model = SKLearnModel(
     model_data=model_data_path,
     role=role,
@@ -54,33 +53,15 @@ model = SKLearnModel(
 )
 
 try:
-    print("🚀 Deploying model to SageMaker endpoint...")
-    predictor = model.deploy(
+    print("🚀 Deploying model to SageMaker endpoint (async)...")
+    model.deploy(
         instance_type='ml.t2.medium',
         initial_instance_count=1,
         endpoint_name=endpoint_name,
         update_endpoint=False,
-        wait=False  # ✅ Async deploy
+        wait=False  # ✅ Fire-and-forget
     )
-    print(f"📡 Endpoint creation triggered for {endpoint_name}. Polling for status...")
-
-    # --- Poll for endpoint status ---
-    while True:
-        response = sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
-        status = response['EndpointStatus']
-        print(f"🔄 Current endpoint status: {status}")
-
-        if status == 'InService':
-            print(f"✅ Endpoint {endpoint_name} is live and ready!")
-            break
-        elif status == 'Failed':
-            failure_reason = response.get('FailureReason', 'No reason provided.')
-            print(f"❌ Endpoint creation failed: {failure_reason}")
-            raise Exception(f"Endpoint creation failed: {failure_reason}")
-        else:
-            print("⏳ Waiting for endpoint to be ready...")
-            time.sleep(60)  # wait 1 minute before checking again
-
+    print(f"✅ Endpoint creation triggered for {endpoint_name}. Check SageMaker console for status.")
 except Exception as e:
     print("❌ Deployment failed:")
     print(str(e))
