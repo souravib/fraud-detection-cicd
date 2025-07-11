@@ -13,14 +13,14 @@ phases:
       - echo "🚀 Running training script"
       - python scripts/train.py --bucket creditcarddata1204 --key data/train_data.csv
 
-  post_build:
-    commands:
-    post_build:
+
+post_build:
   commands:
     - echo "📦 Packaging model.pkl and inference.py into model.tar.gz"
-    - cp model/model.pkl .
-    - cp scripts/inference.py .
-    - tar -czvf model.tar.gz model.pkl inference.py
+    - mkdir -p model_artifact
+    - cp model/model.pkl model_artifact/
+    - cp scripts/inference.py model_artifact/
+    - tar -czvf model.tar.gz -C model_artifact .
 
     - echo "📤 Uploading model.tar.gz to S3"
     - aws s3 cp model.tar.gz s3://creditcarddata1204/model-output-1306/model.tar.gz
@@ -29,6 +29,8 @@ phases:
     - aws s3 cp metrics/metrics.json s3://creditcarddata1204/model-output-1306/metrics.json
 
     - echo "✅ Model and metrics uploaded successfully"
+
+
 
 artifacts:
   files:
