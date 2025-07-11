@@ -57,11 +57,12 @@ model = XGBoostModel(
 try:
     print("🚀 Deploying model to SageMaker endpoint...")
     predictor = model.deploy(
-        instance_type='ml.t2.medium',
-        initial_instance_count=1,
-        endpoint_name=endpoint_name,
-        update_endpoint=False
+    instance_type='ml.t2.medium',
+    initial_instance_count=1,
+    endpoint_name=endpoint_name,
+    update_endpoint=True  # 👈 allows updating if exists
     )
+
     print("✅ Deployment successful!")
 except Exception as e:
     print("❌ Deployment failed:")
