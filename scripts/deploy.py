@@ -1,20 +1,21 @@
 import boto3
+import time
 from sagemaker.sklearn.model import SKLearnModel
 from sagemaker import Session, get_execution_role
 import botocore.exceptions
 
-# --- Config
+# --- Config ---
 model_name = "fraud-model-v1"
 endpoint_name = "fraud-detection-endpoint"
 model_data_path = "s3://creditcarddata1204/model-output-1306/model.tar.gz"
 
-# --- Create session and client
+# --- Create session and client ---
 session = Session()
 sagemaker_client = session.sagemaker_client
 role = get_execution_role()
 
 def delete_existing_resources(endpoint_name):
-    # Delete endpoint if it exists
+    """Delete existing endpoint and config if they exist."""
     try:
         sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
         print(f"⚠️ Deleting existing endpoint: {endpoint_name}")
@@ -28,7 +29,6 @@ def delete_existing_resources(endpoint_name):
         else:
             raise
 
-    # Delete endpoint config if it exists
     try:
         sagemaker_client.describe_endpoint_config(EndpointConfigName=endpoint_name)
         print(f"⚠️ Deleting endpoint config: {endpoint_name}")
@@ -40,14 +40,15 @@ def delete_existing_resources(endpoint_name):
         else:
             raise
 
-# --- Step 1: Clean up previous deployment (if any)
+# --- Step 1: Clean up previous deployment ---
 delete_existing_resources(endpoint_name)
 
-# --- Step 2: Define and deploy new model
+# --- Step 2: Define and deploy new model ---
 model = SKLearnModel(
     model_data=model_data_path,
     role=role,
-    framework_version="1.2-1",   # Same version used during training
+    entry_point="inference.py",  # must define input/output handling
+    framework_version="1.2-1",   # match your scikit-learn version
     py_version="py3",
     sagemaker_session=session
 )
@@ -58,9 +59,28 @@ try:
         instance_type='ml.t2.medium',
         initial_instance_count=1,
         endpoint_name=endpoint_name,
-        update_endpoint=False
+        update_endpoint=False,
+        wait=False  # ✅ Async deploy
     )
-    print("✅ Deployment successful!")
+    print(f"📡 Endpoint creation triggered for {endpoint_name}. Polling for status...")
+
+    # --- Poll for endpoint status ---
+    while True:
+        response = sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
+        status = response['EndpointStatus']
+        print(f"🔄 Current endpoint status: {status}")
+
+        if status == 'InService':
+            print(f"✅ Endpoint {endpoint_name} is live and ready!")
+            break
+        elif status == 'Failed':
+            failure_reason = response.get('FailureReason', 'No reason provided.')
+            print(f"❌ Endpoint creation failed: {failure_reason}")
+            raise Exception(f"Endpoint creation failed: {failure_reason}")
+        else:
+            print("⏳ Waiting for endpoint to be ready...")
+            time.sleep(60)  # wait 1 minute before checking again
+
 except Exception as e:
     print("❌ Deployment failed:")
     print(str(e))
