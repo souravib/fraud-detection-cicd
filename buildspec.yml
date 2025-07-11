@@ -17,9 +17,9 @@ phases:
     commands:
       - echo "📦 Packaging model.pkl and inference.py into model.tar.gz"
       - mkdir -p model_artifact
-      - cp model/model.pkl model_artifact/
-      - cp scripts/inference.py model_artifact/
-      - tar -czvf model.tar.gz -C model_artifact .
+      - cp model/model.pkl inference.py .
+      - tar -czvf model.tar.gz model.pkl inference.py
+      
 
       - echo "📤 Uploading model.tar.gz to S3"
       - aws s3 cp model.tar.gz s3://creditcarddata1204/model-output-1306/model.tar.gz
