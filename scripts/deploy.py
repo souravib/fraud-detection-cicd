@@ -1,6 +1,5 @@
 import boto3
-from sagemaker.xgboost.model import XGBoostModel
-from sagemaker import get_execution_role, Session
+from sagemaker.sklearn.model import SKLearnModel
 from sagemaker import Session, get_execution_role
 import botocore.exceptions
 
@@ -45,11 +44,10 @@ def delete_existing_resources(endpoint_name):
 delete_existing_resources(endpoint_name)
 
 # --- Step 2: Define and deploy new model
-model = XGBoostModel(
+model = SKLearnModel(
     model_data=model_data_path,
     role=role,
-    entry_point="inference.py",
-    framework_version="1.3-1",  # or 1.7-1 if your model needs newer XGBoost
+    framework_version="1.2-1",   # Same version used during training
     py_version="py3",
     sagemaker_session=session
 )
@@ -57,12 +55,11 @@ model = XGBoostModel(
 try:
     print("🚀 Deploying model to SageMaker endpoint...")
     predictor = model.deploy(
-    instance_type='ml.t2.medium',
-    initial_instance_count=1,
-    endpoint_name=endpoint_name,
-    update_endpoint=True  # 👈 allows updating if exists
+        instance_type='ml.t2.medium',
+        initial_instance_count=1,
+        endpoint_name=endpoint_name,
+        update_endpoint=False
     )
-
     print("✅ Deployment successful!")
 except Exception as e:
     print("❌ Deployment failed:")
