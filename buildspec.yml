@@ -14,22 +14,20 @@ phases:
       - python scripts/train.py --bucket creditcarddata1204 --key data/train_data.csv
 
   post_build:
-  
     commands:
-    - echo "📦 Packaging model.pkl and inference.py into model.tar.gz"
-    - cp model/model.pkl scripts/inference.py .
-    - tar -czvf model.tar.gz model.pkl inference.py
+      - echo "📦 Packaging model.pkl and inference.py into model.tar.gz"
+      - ls -R .  # 👈 DEBUG: check where model.pkl is
+      - cp model.pkl inference.py .  # adjust path if needed
+      - tar -czvf model.tar.gz model.pkl inference.py
 
-    - echo "📤 Uploading model.tar.gz to S3"
-    - aws s3 cp model.tar.gz s3://creditcarddata1204/model-output-1306/model.tar.gz
+      - echo "📤 Uploading model.tar.gz to S3"
+      - aws s3 cp model.tar.gz s3://creditcarddata1204/model-output-1306/model.tar.gz
 
-    - echo "📤 Uploading metrics.json to S3"
-    - aws s3 cp metrics/metrics.json s3://creditcarddata1204/model-output-1306/metrics.json
+      - echo "📤 Uploading metrics.json to S3"
+      - aws s3 cp metrics/metrics.json s3://creditcarddata1204/model-output-1306/metrics.json
 
-    - echo "✅ Model and metrics uploaded successfully"
-
-    
+      - echo "✅ Model and metrics uploaded successfully"
 
 artifacts:
   files:
-    - model.tar.gz
+    - '**/*'
