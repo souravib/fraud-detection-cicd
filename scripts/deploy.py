@@ -2,6 +2,7 @@ import boto3
 from sagemaker.sklearn.model import SKLearnModel
 from sagemaker import Session, get_execution_role
 import botocore.exceptions
+import sys
 
 # --- Config ---
 model_name = "fraud-model-v1"
@@ -59,9 +60,14 @@ try:
         initial_instance_count=1,
         endpoint_name=endpoint_name,
         update_endpoint=False,
-        wait=False  # ✅ Fire-and-forget
+        wait=False  # ✅ Fire-and-forget for CodeBuild
     )
     print(f"✅ Endpoint creation triggered for {endpoint_name}. Check SageMaker console for status.")
+
+    # ✅ Exit immediately to prevent CodeBuild from hanging
+    sys.exit(0)
+
 except Exception as e:
     print("❌ Deployment failed:")
     print(str(e))
+    sys.exit(1)
