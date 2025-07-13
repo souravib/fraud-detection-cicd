@@ -11,4 +11,4 @@ phases:
     commands:
       - echo "🚀 Deploying model to SageMaker"
       - python scripts/deploy.py
-      - echo "✅ Deployment complete"
+      - echo "✅ Deployment script finished (endpoint creation async)"
