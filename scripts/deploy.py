@@ -1,20 +1,21 @@
 import boto3
-from sagemaker.sklearn.model import SKLearnModel
-from sagemaker import Session, get_execution_role
+from sagemaker import get_execution_role, Session
 import botocore.exceptions
 import sys
 
 # --- Config ---
 model_name = "fraud-model-v1"
 endpoint_name = "fraud-detection-endpoint"
+endpoint_config_name = endpoint_name + "-config"
 model_data_path = "s3://creditcarddata1204/model-output-1306/model.tar.gz"
+container_image_uri = "683313688378.dkr.ecr.eu-west-1.amazonaws.com/sagemaker-scikit-learn:1.2-1-cpu-py3"
 
 # --- Create session and client ---
 session = Session()
 sagemaker_client = session.sagemaker_client
 role = get_execution_role()
 
-def delete_existing_resources(endpoint_name):
+def delete_existing_resources(endpoint_name, endpoint_config_name):
     """Delete existing endpoint and config if they exist."""
     try:
         sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
@@ -30,9 +31,9 @@ def delete_existing_resources(endpoint_name):
             raise
 
     try:
-        sagemaker_client.describe_endpoint_config(EndpointConfigName=endpoint_name)
-        print(f"⚠️ Deleting endpoint config: {endpoint_name}")
-        sagemaker_client.delete_endpoint_config(EndpointConfigName=endpoint_name)
+        sagemaker_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
+        print(f"⚠️ Deleting endpoint config: {endpoint_config_name}")
+        sagemaker_client.delete_endpoint_config(EndpointConfigName=endpoint_config_name)
         print("✅ Endpoint config deleted.")
     except botocore.exceptions.ClientError as e:
         if "Could not find" in str(e):
@@ -41,33 +42,47 @@ def delete_existing_resources(endpoint_name):
             raise
 
 # --- Step 1: Clean up previous deployment ---
-delete_existing_resources(endpoint_name)
+delete_existing_resources(endpoint_name, endpoint_config_name)
 
-# --- Step 2: Trigger deploy without waiting ---
-model = SKLearnModel(
-    model_data=model_data_path,
-    role=role,
-    entry_point="inference.py",  # must define input/output handling
-    framework_version="1.2-1",   # match your scikit-learn version
-    py_version="py3",
-    sagemaker_session=session
+# --- Step 2: Create model ---
+print("📦 Creating SageMaker model...")
+sagemaker_client.create_model(
+    ModelName=model_name,
+    PrimaryContainer={
+        'Image': container_image_uri,
+        'ModelDataUrl': model_data_path,
+        'Environment': {
+            'SAGEMAKER_PROGRAM': 'inference.py',
+            'SAGEMAKER_SUBMIT_DIRECTORY': model_data_path
+        }
+    },
+    ExecutionRoleArn=role
 )
+print(f"✅ Model '{model_name}' created.")
 
-try:
-    print("🚀 Deploying model to SageMaker endpoint (async)...")
-    model.deploy(
-        instance_type='ml.t2.medium',
-        initial_instance_count=1,
-        endpoint_name=endpoint_name,
-        update_endpoint=False,
-        wait=False  # ✅ Fire-and-forget for CodeBuild
-    )
-    print(f"✅ Endpoint creation triggered for {endpoint_name}. Check SageMaker console for status.")
+# --- Step 3: Create endpoint config ---
+print("⚙️ Creating endpoint configuration...")
+sagemaker_client.create_endpoint_config(
+    EndpointConfigName=endpoint_config_name,
+    ProductionVariants=[
+        {
+            'VariantName': 'AllTraffic',
+            'ModelName': model_name,
+            'InitialInstanceCount': 1,
+            'InstanceType': 'ml.t2.medium',
+            'InitialVariantWeight': 1
+        }
+    ]
+)
+print(f"✅ Endpoint configuration '{endpoint_config_name}' created.")
 
-    # ✅ Exit immediately to prevent CodeBuild from hanging
-    sys.exit(0)
+# --- Step 4: Create endpoint (async) ---
+print("🚀 Creating endpoint asynchronously...")
+sagemaker_client.create_endpoint(
+    EndpointName=endpoint_name,
+    EndpointConfigName=endpoint_config_name
+)
+print(f"✅ Endpoint creation triggered for '{endpoint_name}'. Check SageMaker console for status.")
 
-except Exception as e:
-    print("❌ Deployment failed:")
-    print(str(e))
-    sys.exit(1)
+# --- Exit immediately to avoid CodeBuild hang ---
+sys.exit(0)
