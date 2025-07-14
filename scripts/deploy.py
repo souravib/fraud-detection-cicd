@@ -8,7 +8,10 @@ model_name = "fraud-model-v1"
 endpoint_name = "fraud-detection-endpoint"
 endpoint_config_name = endpoint_name + "-config"
 model_data_path = "s3://creditcarddata1204/model-output-1306/model.tar.gz"
-container_image_uri = "683313688378.dkr.ecr.eu-west-1.amazonaws.com/sagemaker-scikit-learn:1.2-1-cpu-py3"
+
+# --- Use SageMaker’s public scikit-learn container ---
+region = boto3.Session().region_name
+container_image_uri = f"683313688378.dkr.ecr.{region}.amazonaws.com/sagemaker-scikit-learn:1.2-1-cpu-py3"
 
 # --- Create session and client ---
 session = Session()
@@ -52,8 +55,7 @@ sagemaker_client.create_model(
         'Image': container_image_uri,
         'ModelDataUrl': model_data_path,
         'Environment': {
-            'SAGEMAKER_PROGRAM': 'inference.py',
-            'SAGEMAKER_SUBMIT_DIRECTORY': model_data_path
+            'SAGEMAKER_PROGRAM': 'inference.py'
         }
     },
     ExecutionRoleArn=role
