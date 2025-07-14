@@ -16,8 +16,8 @@ phases:
   post_build:
     commands:
       - echo "📦 Packaging model.pkl and inference.py into model.tar.gz"
-      # ✅ Put model.pkl and inference.py at root of tar.gz
-      - tar -czvf model.tar.gz -C model model.pkl -C scripts inference.py
+      - cp scripts/inference.py model/  # ✅ Copy inference.py next to model.pkl
+      - tar -czvf model.tar.gz -C model model.pkl inference.py
 
       - echo "📤 Uploading model.tar.gz to S3"
       - aws s3 cp model.tar.gz s3://creditcarddata1204/model-output-1306/model.tar.gz
