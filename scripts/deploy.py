@@ -15,12 +15,11 @@ region = session.boto_region_name
 sagemaker_client = session.sagemaker_client
 role = get_execution_role()
 
-# --- Get public SageMaker scikit-learn container image ---
+# ✅ Get public SageMaker scikit-learn container image
 container_image_uri = image_uris.retrieve(
     framework='sklearn',
     region=region,
     version='1.2-1',
-    instance_type='ml.t2.medium',
     py_version='py3'
 )
 print(f"📦 Using container image: {container_image_uri}")
