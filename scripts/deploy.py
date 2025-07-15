@@ -48,7 +48,6 @@ print("📦 Deploying model to SageMaker...")
 model = SKLearnModel(
     model_data=model_data_path,
     role=role,
-    entry_point="inference.py",  # ✅ Points to your inference handler
     framework_version="1.2-1",
     py_version="py3",
     sagemaker_session=session
@@ -60,6 +59,7 @@ predictor = model.deploy(
     endpoint_name=endpoint_name,
     wait=False  # ✅ Fire-and-forget deployment
 )
+
 
 print(f"✅ Endpoint creation triggered for '{endpoint_name}'. Check SageMaker console for status.")
 sys.exit(0)
