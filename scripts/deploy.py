@@ -1,5 +1,7 @@
 import boto3
-from sagemaker import get_execution_role, Session, image_uris
+import sagemaker
+from sagemaker.sklearn.model import SKLearnModel
+from sagemaker import get_execution_role, Session
 import botocore.exceptions
 import sys
 
@@ -8,21 +10,9 @@ model_name = "fraud-model-v1"
 endpoint_name = "fraud-detection-endpoint"
 endpoint_config_name = endpoint_name + "-config"
 model_data_path = "s3://creditcarddata1204/model-output-1306/model.tar.gz"
-
-# --- Create session and client ---
-session = Session()
-region = session.boto_region_name
-sagemaker_client = session.sagemaker_client
 role = get_execution_role()
-
-# ✅ Get public SageMaker scikit-learn container image
-container_image_uri = image_uris.retrieve(
-    framework='sklearn',
-    region=region,
-    version='1.2-1',
-    py_version='py3'
-)
-print(f"📦 Using container image: {container_image_uri}")
+session = Session()
+sagemaker_client = session.sagemaker_client
 
 def delete_existing_resources(endpoint_name, endpoint_config_name):
     """Delete existing endpoint and config if they exist."""
@@ -53,44 +43,23 @@ def delete_existing_resources(endpoint_name, endpoint_config_name):
 # --- Step 1: Clean up previous deployment ---
 delete_existing_resources(endpoint_name, endpoint_config_name)
 
-# --- Step 2: Create model ---
-print("📦 Creating SageMaker model...")
-sagemaker_client.create_model(
-    ModelName=model_name,
-    PrimaryContainer={
-        'Image': container_image_uri,
-        'ModelDataUrl': model_data_path,
-        'Environment': {
-            'SAGEMAKER_PROGRAM': 'inference.py'
-        }
-    },
-    ExecutionRoleArn=role
+# --- Step 2: Deploy model ---
+print("📦 Deploying model to SageMaker...")
+model = SKLearnModel(
+    model_data=model_data_path,
+    role=role,
+    entry_point="inference.py",  # ✅ Points to your inference handler
+    framework_version="1.2-1",
+    py_version="py3",
+    sagemaker_session=session
 )
-print(f"✅ Model '{model_name}' created.")
 
-# --- Step 3: Create endpoint config ---
-print("⚙️ Creating endpoint configuration...")
-sagemaker_client.create_endpoint_config(
-    EndpointConfigName=endpoint_config_name,
-    ProductionVariants=[
-        {
-            'VariantName': 'AllTraffic',
-            'ModelName': model_name,
-            'InitialInstanceCount': 1,
-            'InstanceType': 'ml.t2.medium',
-            'InitialVariantWeight': 1
-        }
-    ]
+predictor = model.deploy(
+    initial_instance_count=1,
+    instance_type="ml.t2.medium",
+    endpoint_name=endpoint_name,
+    wait=False  # ✅ Fire-and-forget deployment
 )
-print(f"✅ Endpoint configuration '{endpoint_config_name}' created.")
 
-# --- Step 4: Create endpoint (async) ---
-print("🚀 Creating endpoint asynchronously...")
-sagemaker_client.create_endpoint(
-    EndpointName=endpoint_name,
-    EndpointConfigName=endpoint_config_name
-)
 print(f"✅ Endpoint creation triggered for '{endpoint_name}'. Check SageMaker console for status.")
-
-# --- Exit immediately to avoid CodeBuild hang ---
 sys.exit(0)
