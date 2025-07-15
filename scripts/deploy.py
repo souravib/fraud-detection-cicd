@@ -1,5 +1,5 @@
 import boto3
-from sagemaker import get_execution_role, Session
+from sagemaker import get_execution_role, Session, image_uris
 import botocore.exceptions
 import sys
 
@@ -9,14 +9,21 @@ endpoint_name = "fraud-detection-endpoint"
 endpoint_config_name = endpoint_name + "-config"
 model_data_path = "s3://creditcarddata1204/model-output-1306/model.tar.gz"
 
-# --- Use SageMaker’s public scikit-learn container ---
-region = boto3.Session().region_name
-container_image_uri = f"683313688378.dkr.ecr.{region}.amazonaws.com/sagemaker-scikit-learn:1.2-1-cpu-py3"
-
 # --- Create session and client ---
 session = Session()
+region = session.boto_region_name
 sagemaker_client = session.sagemaker_client
 role = get_execution_role()
+
+# --- Get public SageMaker scikit-learn container image ---
+container_image_uri = image_uris.retrieve(
+    framework='sklearn',
+    region=region,
+    version='1.2-1',
+    instance_type='ml.t2.medium',
+    py_version='py3'
+)
+print(f"📦 Using container image: {container_image_uri}")
 
 def delete_existing_resources(endpoint_name, endpoint_config_name):
     """Delete existing endpoint and config if they exist."""
