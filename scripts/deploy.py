@@ -46,6 +46,7 @@ delete_existing_resources(endpoint_name, endpoint_config_name)
 # --- Step 2: Deploy model ---
 print("📦 Deploying model to SageMaker...")
 model = SKLearnModel(
+    entry_point="scripts/inference.py",  # ✅ Added
     model_data=model_data_path,
     role=role,
     framework_version="1.2-1",
@@ -59,7 +60,6 @@ predictor = model.deploy(
     endpoint_name=endpoint_name,
     wait=False  # ✅ Fire-and-forget deployment
 )
-
 
 print(f"✅ Endpoint creation triggered for '{endpoint_name}'. Check SageMaker console for status.")
 sys.exit(0)
