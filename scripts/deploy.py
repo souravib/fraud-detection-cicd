@@ -1,56 +1,31 @@
-import boto3
 import sagemaker
-from sagemaker import get_execution_role
-from sagemaker.xgboost.model import XGBoostModel
+from sagemaker.sklearn.model import SKLearnModel
+import boto3
 
-# Set up SageMaker session and role
-session = sagemaker.Session()
-role = get_execution_role()
+# SageMaker session and role
+sagemaker_session = sagemaker.Session()
+role = sagemaker.get_execution_role()
 
-# Your model artifact location (S3)
+# S3 path to model.tar.gz
 model_data_path = "s3://creditcarddata1204/model-output-1306/model.tar.gz"
 
-# Endpoint configuration
-endpoint_name = "fraud-detection-endpoint"
-
-# Delete existing endpoint and endpoint config (if any)
-sm_client = boto3.client("sagemaker")
-
-# Delete endpoint if it exists
-try:
-    sm_client.describe_endpoint(EndpointName=endpoint_name)
-    print(f"⚠️ Deleting existing endpoint: {endpoint_name}")
-    sm_client.delete_endpoint(EndpointName=endpoint_name)
-    waiter = sm_client.get_waiter("endpoint_deleted")
-    waiter.wait(EndpointName=endpoint_name)
-    print("✅ Endpoint deleted.")
-except sm_client.exceptions.ClientError:
-    print("ℹ️ No existing endpoint found.")
-
-# Delete endpoint config if it exists
-try:
-    sm_client.describe_endpoint_config(EndpointConfigName=endpoint_name)
-    print(f"⚠️ Deleting existing endpoint config: {endpoint_name}")
-    sm_client.delete_endpoint_config(EndpointConfigName=endpoint_name)
-    print("✅ Endpoint config deleted.")
-except sm_client.exceptions.ClientError:
-    print("ℹ️ No existing endpoint config found.")
-
-# Deploy the model using SageMaker XGBoost container
-print("📦 Deploying model to SageMaker...")
-model = XGBoostModel(
+# Create SKLearnModel with dependencies
+sklearn_model = SKLearnModel(
     model_data=model_data_path,
     role=role,
-    entry_point="inference.py",  # Your inference script
-    framework_version="1.7-1",   # SageMaker XGBoost version (adjust if needed)
-    sagemaker_session=session
+    entry_point="inference.py",        # ✅ Your custom inference script
+    source_dir="scripts",              # ✅ Directory containing inference.py
+    framework_version="1.2-1",         # ✅ Matches sklearn version used
+    py_version="py3",
+    sagemaker_session=sagemaker_session,
+    dependencies=["requirements.txt"]  # ✅ Add custom requirements
 )
 
-# Deploy as endpoint
-predictor = model.deploy(
+# Deploy the model
+predictor = sklearn_model.deploy(
     initial_instance_count=1,
-    instance_type="ml.t2.medium",
-    endpoint_name=endpoint_name
+    instance_type="ml.m5.large",  # Or ml.t2.medium for testing
 )
 
-print(f"🚀 Model deployed to endpoint: {endpoint_name}")
+print("✅ Model deployed successfully.")
+print("Endpoint name:", predictor.endpoint_name)
